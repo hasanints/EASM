@@ -1,11 +1,10 @@
 {
-    "name": "Exp1",
+    "name": "sleep_edf20_exp1",
     "n_gpu": 1,
 
     "arch": {
         "type": "AttnSleep",
         "args": {
-            "num_classes": 5  
         }
     },
     "data_loader": {
