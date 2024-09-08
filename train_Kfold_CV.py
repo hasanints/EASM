@@ -22,11 +22,9 @@ np.random.seed(SEED)
 
 
 def weights_init_normal(m):
-    if type(m) == nn.Conv2d:
+    if isinstance(m, nn.Conv2d) or isinstance(m, nn.Conv1d):
         torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
-    elif type(m) == nn.Conv1d:
-        torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
-    elif type(m) == nn.BatchNorm1d:
+    elif isinstance(m, nn.BatchNorm1d):
         torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
         torch.nn.init.constant_(m.bias.data, 0.0)
 
@@ -36,6 +34,10 @@ def main(config, fold_id):
 
     logger = config.get_logger('train')
 
+    # Ensure 'num_classes' is in 'arch' args
+    if 'args' not in config['arch'] or 'num_classes' not in config['arch']['args']:
+        raise KeyError("`num_classes` must be defined in `arch` args in the configuration file.")
+
     # build model architecture, initialize weights, then print to console
     model = config.init_obj('arch', module_arch)
     model.apply(weights_init_normal)
@@ -43,10 +45,6 @@ def main(config, fold_id):
 
     # Ridge Regularization parameter
     lambda_ridge = config['loss_args'].get('lambda_ridge', 100)  # Default value if not specified
-
-    # Ensure 'num_classes' is in 'arch' args
-    if 'args' not in config['arch'] or 'num_classes' not in config['arch']['args']:
-        raise KeyError("`num_classes` must be defined in `arch` args in the configuration file.")
 
     # get function handles of loss and metrics
     if config['loss'] == 'CB_loss':
@@ -86,7 +84,6 @@ def main(config, fold_id):
                       class_weights=weights_for_each_class)
 
     trainer.train()
-
 
 
 if __name__ == '__main__':
