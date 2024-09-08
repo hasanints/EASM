@@ -5,6 +5,7 @@
     "arch": {
         "type": "AttnSleep",
         "args": {
+            "num_classes": 5  
         }
     },
     "data_loader": {
@@ -23,10 +24,10 @@
     },
     "loss": "CB_loss",
     "loss_args": {
-    "loss_type": "focal",
-    "beta": 0.9999,
-    "gamma": 2.0,
-    "samples_per_cls": [2, 3, 1, 2, 2]
+        "loss_type": "focal",
+        "beta": 0.9999,
+        "gamma": 2.0,
+        "samples_per_cls": [2, 3, 1, 2, 2]
     },
     "metrics": [
         "accuracy",
