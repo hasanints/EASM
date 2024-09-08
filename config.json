@@ -21,9 +21,16 @@
             "amsgrad": true
         }
     },
-    "loss": "weighted_CrossEntropyLoss",
+    "loss": "CB_loss",
+    "loss_args": {
+    "loss_type": "focal",
+    "beta": 0.9999,
+    "gamma": 2.0,
+    "samples_per_cls": [2, 3, 1, 2, 2]
+    },
     "metrics": [
-        "accuracy"
+        "accuracy",
+        "f1"
     ],
     "trainer": {
         "epochs": 100,
