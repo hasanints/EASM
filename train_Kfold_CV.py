@@ -44,6 +44,10 @@ def main(config, fold_id):
     # Ridge Regularization parameter
     lambda_ridge = config['loss_args'].get('lambda_ridge', 100)  # Default value if not specified
 
+    # Ensure 'num_classes' is in 'arch' args
+    if 'args' not in config['arch'] or 'num_classes' not in config['arch']['args']:
+        raise KeyError("`num_classes` must be defined in `arch` args in the configuration file.")
+
     # get function handles of loss and metrics
     if config['loss'] == 'CB_loss':
         # Ensure that necessary parameters are provided in the config
@@ -82,6 +86,7 @@ def main(config, fold_id):
                       class_weights=weights_for_each_class)
 
     trainer.train()
+
 
 
 if __name__ == '__main__':
