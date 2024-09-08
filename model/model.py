@@ -96,7 +96,7 @@ class MRCNN(nn.Module):
         )
 
         self.features2 = nn.Sequential(
-            nn.Conv1d(1, 64, kernel_size=400, stride=50, bias=False, padding=200),
+            nn.Conv1d(1, 128, kernel_size=300, stride=50, bias=False, padding=200),
             nn.BatchNorm1d(64),
             self.GELU,
             nn.MaxPool1d(kernel_size=4, stride=2, padding=2),
