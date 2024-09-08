@@ -5,7 +5,6 @@ from utils import inf_loop, MetricTracker
 import torch.nn as nn
 
 selected_d = {"outs": [], "trg": []}
-
 class Trainer(BaseTrainer):
     """
     Trainer class
@@ -29,9 +28,6 @@ class Trainer(BaseTrainer):
         self.selected = 0
         self.class_weights = class_weights
 
-        # Ridge Regularization Parameter
-        self.lambda_ridge = config['loss_args'].get('lambda_ridge', 100)  # Default value
-
     def _train_epoch(self, epoch, total_epochs):
         """
         Training logic for an epoch
@@ -50,18 +46,8 @@ class Trainer(BaseTrainer):
             self.optimizer.zero_grad()
             output = self.model(data)
 
-            # Compute base loss
             loss = self.criterion(output, target, self.class_weights, self.device)
 
-            # Ridge Regularization (L2 penalty)
-            l2_reg = torch.tensor(0., device=self.device)
-            for param in self.model.parameters():
-                l2_reg += torch.norm(param, 2)  # L2 norm of the parameter
-
-            # Add L2 penalty to the loss
-            loss += self.lambda_ridge * l2_reg
-
-            # Backward pass and optimization
             loss.backward()
             self.optimizer.step()
 
@@ -123,6 +109,7 @@ class Trainer(BaseTrainer):
 
                 outs = np.append(outs, preds_.cpu().numpy())
                 trgs = np.append(trgs, target.data.cpu().numpy())
+
 
         return self.valid_metrics.result(), outs, trgs
 
