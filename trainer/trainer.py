@@ -5,9 +5,10 @@ from utils import inf_loop, MetricTracker
 import torch.nn as nn
 
 selected_d = {"outs": [], "trg": []}
+
 class Trainer(BaseTrainer):
     """
-    Trainer class
+    Trainer class for managing training and validation processes.
     """
     def __init__(self, model, criterion, metric_ftns, optimizer, config, data_loader, fold_id,
                  valid_data_loader=None, class_weights=None):
@@ -19,7 +20,7 @@ class Trainer(BaseTrainer):
         self.valid_data_loader = valid_data_loader
         self.do_validation = self.valid_data_loader is not None
         self.lr_scheduler = optimizer
-        self.log_step = int(data_loader.batch_size) * 1  # reduce this if you want more logs
+        self.log_step = int(data_loader.batch_size) * 1  # Logging frequency
 
         self.train_metrics = MetricTracker('loss', *[m.__name__ for m in self.metric_ftns])
         self.valid_metrics = MetricTracker('loss', *[m.__name__ for m in self.metric_ftns])
@@ -28,26 +29,20 @@ class Trainer(BaseTrainer):
         self.selected = 0
         self.class_weights = class_weights
 
-    def _train_epoch(self, epoch, total_epochs):
+    def _train_epoch(self, epoch: int, total_epochs: int):
         """
-        Training logic for an epoch
-
-        :param epoch: Integer, current training epoch.
-               total_epochs: Integer, the total number of epoch
-        :return: A log that contains average loss and metric in this epoch.
+        Training logic for an epoch.
         """
         self.model.train()
         self.train_metrics.reset()
-        overall_outs = []
-        overall_trgs = []
+        overall_outs, overall_trgs = [], []
+
         for batch_idx, (data, target) in enumerate(self.data_loader):
             data, target = data.to(self.device), target.to(self.device)
 
             self.optimizer.zero_grad()
             output = self.model(data)
-
             loss = self.criterion(output, target, self.class_weights, self.device)
-
             loss.backward()
             self.optimizer.step()
 
@@ -64,6 +59,7 @@ class Trainer(BaseTrainer):
 
             if batch_idx == self.len_epoch:
                 break
+
         log = self.train_metrics.result()
 
         if self.do_validation:
@@ -77,19 +73,16 @@ class Trainer(BaseTrainer):
                 overall_outs.extend(selected_d["outs"])
                 overall_trgs.extend(selected_d["trg"])
 
-            # THIS part is to reduce the learning rate after 10 epochs to 1e-4
+            # Reduce learning rate after 10 epochs
             if epoch == 10:
                 for g in self.lr_scheduler.param_groups:
                     g['lr'] = 0.0001
 
         return log, overall_outs, overall_trgs
 
-    def _valid_epoch(self, epoch):
+    def _valid_epoch(self, epoch: int):
         """
-        Validate after training an epoch
-
-        :param epoch: Integer, current training epoch.
-        :return: A log that contains information about validation
+        Validate after training an epoch.
         """
         self.model.eval()
         self.valid_metrics.reset()
@@ -110,10 +103,12 @@ class Trainer(BaseTrainer):
                 outs = np.append(outs, preds_.cpu().numpy())
                 trgs = np.append(trgs, target.data.cpu().numpy())
 
-
         return self.valid_metrics.result(), outs, trgs
 
-    def _progress(self, batch_idx):
+    def _progress(self, batch_idx: int) -> str:
+        """
+        Display the progress of the training.
+        """
         base = '[{}/{} ({:.0f}%)]'
         if hasattr(self.data_loader, 'n_samples'):
             current = batch_idx * self.data_loader.batch_size
