@@ -38,6 +38,7 @@ def weights_init_normal(m):
         torch.nn.init.constant_(m.bias.data, 0.0)
 
 
+
 def main(config, fold_id):
     """
     Main function to set up data loaders, model, loss, optimizer, and start training.
@@ -52,7 +53,15 @@ def main(config, fold_id):
     logger.info(model)
 
     # get function handles of loss and metrics
-    criterion = getattr(module_loss, config['loss'])
+    loss_function = getattr(module_loss, config['loss'])  # Use CB_loss
+    loss_args = config.get('loss_args', {})  # Get loss-specific arguments from config
+
+    # Modify criterion to include all necessary loss arguments
+    def criterion(output, target, class_weights, device):
+        return loss_function(target, output, class_weights, 
+                             config['arch']['args']['num_classes'],
+                             loss_args['loss_type'], loss_args['beta'], loss_args['gamma'])
+
     metrics = [getattr(module_metric, met) for met in config['metrics']]
 
     # build optimizer
@@ -78,6 +87,7 @@ def main(config, fold_id):
     metrics_calculator = MetricsCalculator(config, trainer.checkpoint_dir)
     # Calculate and save metrics
     metrics_calculator._calc_metrics()
+
 
 
 if __name__ == '__main__':
