@@ -1,37 +1,43 @@
 {
     "name": "sleep_edf20_exp3",
     "n_gpu": 1,
-
+  
     "arch": {
-        "type": "EASM",
-        "args": {
-            "num_classes": 5  
-        }
+      "type": "EASM",
+      "args": {
+        "num_classes": 5
+      }
     },
     "data_loader": {
-        "args": {
-            "batch_size": 128,
-            "num_folds": 20   
-        }
+      "args": {
+        "batch_size": 128,
+        "num_folds": 20
+      }
     },
     "optimizer": {
-        "type": "Adam",
-        "args": {
-            "lr": 0.001,
-            "weight_decay": 0.00001,
-            "amsgrad": true
-        }
+      "type": "Adam",
+      "args": {
+        "lr": 0.001,
+        "weight_decay": 0.00001,
+        "amsgrad": true
+      }
     },
-    "loss": "weighted_CrossEntropyLoss",
+    "loss": "CB_loss",  // Use CB_loss function
+    "loss_args": {
+      "beta": 0.9999,
+      "gamma": 2.0,
+      "loss_type": "focal"
+    },
     "metrics": [
-        "accuracy",
-        "f1"
+      "accuracy",
+      "f1"
     ],
     "trainer": {
-        "epochs": 100,
-        "save_dir": "saved/",  
-        "save_period": 30,
-        "verbosity": 2,
-        "monitor": "min val_loss"
+      "epochs": 100,
+      "save_dir": "saved/",
+      "save_period": 30,
+      "verbosity": 2,
+      "monitor": "min val_loss"
     }
-}
+  }
+  
