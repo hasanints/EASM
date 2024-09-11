@@ -1,9 +1,9 @@
 {
-    "name": "sleep_edf20_exp2",
+    "name": "sleep_edf20_exp3",
     "n_gpu": 1,
 
     "arch": {
-        "type": "AttnSleep",
+        "type": "EASM",
         "args": {
             "num_classes": 5  
         }

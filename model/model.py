@@ -301,9 +301,9 @@ class PositionwiseFeedForward(nn.Module):
 
 
 
-class AttnSleep(nn.Module):
+class EASM(nn.Module):
     def __init__(self):
-        super(AttnSleep, self).__init__()
+        super(EASM, self).__init__()
 
         d_model = 80  # model dimension
         d_ff = 120   # dimension of feed forward
