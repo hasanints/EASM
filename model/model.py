@@ -302,15 +302,16 @@ class PositionwiseFeedForward(nn.Module):
 
 
 class EASM(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes=5):
         super(EASM, self).__init__()
 
         d_model = 80  # model dimension
         d_ff = 120   # dimension of feed forward
         h = 5  # number of attention heads
         dropout = 0.1
-        num_classes = 5
         afr_reduced_cnn_size = 30
+
+        self.num_classes = num_classes  # Ensure to store the num_classes
 
         self.mrcnn = MRCNN(afr_reduced_cnn_size)  # Use MRCNN_SHHS for SHHS dataset
 
@@ -333,7 +334,7 @@ class EASM(nn.Module):
         encoded_features = encoded_features.contiguous().view(encoded_features.shape[0], -1)
         final_output = self.fc(encoded_features)
         return final_output
-
+    
 ######################################################################
 
 class MRCNN_SHHS(nn.Module):
