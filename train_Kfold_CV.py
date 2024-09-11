@@ -54,7 +54,7 @@ def main(config, fold_id):
 
     # get function handles of loss and metrics
     loss_function = getattr(module_loss, config['loss'])  # Use CB_loss
-    loss_args = config.get('loss_args', {})  # Get loss-specific arguments from config
+    loss_args = config['loss_args'] if 'loss_args' in config else {}  # Access loss-specific arguments from config
 
     # Modify criterion to include all necessary loss arguments
     def criterion(output, target, class_weights, device):
@@ -87,6 +87,7 @@ def main(config, fold_id):
     metrics_calculator = MetricsCalculator(config, trainer.checkpoint_dir)
     # Calculate and save metrics
     metrics_calculator._calc_metrics()
+
 
 
 
