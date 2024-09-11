@@ -1,21 +1,22 @@
 {
-    "name": "Exp1",
+    "name": "sleep_edf20_exp2",
     "n_gpu": 1,
 
     "arch": {
         "type": "AttnSleep",
         "args": {
+            "num_classes": 5  
         }
     },
     "data_loader": {
-        "args":{
+        "args": {
             "batch_size": 128,
-            "num_folds": 20
+            "num_folds": 20   
         }
     },
     "optimizer": {
         "type": "Adam",
-        "args":{
+        "args": {
             "lr": 0.001,
             "weight_decay": 0.001,
             "amsgrad": true
@@ -28,7 +29,7 @@
     ],
     "trainer": {
         "epochs": 100,
-        "save_dir": "saved/",
+        "save_dir": "saved/",  
         "save_period": 30,
         "verbosity": 2,
         "monitor": "min val_loss"
