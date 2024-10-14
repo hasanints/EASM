@@ -78,37 +78,37 @@ class MRCNN(nn.Module):
         drate = 0.5
         self.GELU = GELU()  # for older versions of PyTorch.  For new versions use nn.GELU() instead.
         self.features1 = nn.Sequential(
-            nn.Conv1d(1, 128, kernel_size=25, stride=6, bias=False, padding=24),
-            nn.BatchNorm1d(128),
+            nn.Conv1d(1, 64, kernel_size=50, stride=6, bias=False, padding=24),
+            nn.BatchNorm1d(64),
             self.GELU,
             nn.MaxPool1d(kernel_size=8, stride=2, padding=4),
             nn.Dropout(drate),
+
+            nn.Conv1d(64, 128, kernel_size=8, stride=1, bias=False, padding=4),
+            nn.BatchNorm1d(128),
+            self.GELU,
 
             nn.Conv1d(128, 128, kernel_size=8, stride=1, bias=False, padding=4),
             nn.BatchNorm1d(128),
             self.GELU,
 
-            # nn.Conv1d(128, 128, kernel_size=8, stride=1, bias=False, padding=4),
-            # nn.BatchNorm1d(128),
-            # self.GELU,
-
             nn.MaxPool1d(kernel_size=4, stride=4, padding=2)
         )
 
         self.features2 = nn.Sequential(
-            nn.Conv1d(1, 128, kernel_size=300, stride=50, bias=False, padding=200),
+            nn.Conv1d(1, 64, kernel_size=400, stride=50, bias=False, padding=200),
+            nn.BatchNorm1d(64),
+            self.GELU,
+            nn.MaxPool1d(kernel_size=4, stride=2, padding=2),
+            nn.Dropout(drate),
+
+            nn.Conv1d(64, 128, kernel_size=7, stride=1, bias=False, padding=3),
             nn.BatchNorm1d(128),
             self.GELU,
-            nn.MaxPool1d(kernel_size=8, stride=2, padding=2),
-            nn.Dropout(drate),
 
             nn.Conv1d(128, 128, kernel_size=7, stride=1, bias=False, padding=3),
             nn.BatchNorm1d(128),
             self.GELU,
-
-            # nn.Conv1d(128, 128, kernel_size=7, stride=1, bias=False, padding=3),
-            # nn.BatchNorm1d(128),
-            # self.GELU,
 
             nn.MaxPool1d(kernel_size=2, stride=2, padding=1)
         )
@@ -247,19 +247,19 @@ def clones(module, N):
 
 class TCE(nn.Module):
     '''
-    Modified Transformer Encoder to have only one layer as per the diagram.
+    Transformer Encoder
+
+    It is a stack of N layers.
     '''
 
-    def __init__(self, size, self_attn, feed_forward, afr_reduced_cnn_size, dropout):
+    def __init__(self, layer, N):
         super(TCE, self).__init__()
-        # Initialize only one encoder layer instead of N
-        self.encoder_layer = EncoderLayer(size, self_attn, feed_forward, afr_reduced_cnn_size, dropout)
-        self.norm = LayerNorm(size)  # Single LayerNorm as shown in the figure
+        self.layers = clones(layer, N)
+        self.norm = LayerNorm(layer.size)
 
     def forward(self, x):
-        # Process input through the single encoder layer
-        x = self.encoder_layer(x)
-        # Apply normalization after the layer as shown in the diagram
+        for layer in self.layers:
+            x = layer(x)
         return self.norm(x)
 
 
@@ -301,40 +301,33 @@ class PositionwiseFeedForward(nn.Module):
 
 
 
-class EASM(nn.Module):
-    def __init__(self, num_classes=5):
-        super(EASM, self).__init__()
+class AttnSleep(nn.Module):
+    def __init__(self):
+        super(AttnSleep, self).__init__()
 
-        d_model = 80  # model dimension
+        N = 2  # number of TCE clones
+        d_model = 80  # set to be 100 for SHHS dataset
         d_ff = 120   # dimension of feed forward
         h = 5  # number of attention heads
         dropout = 0.1
+        num_classes = 5
         afr_reduced_cnn_size = 30
 
-        self.num_classes = num_classes  # Ensure to store the num_classes
+        self.mrcnn = MRCNN(afr_reduced_cnn_size) # use MRCNN_SHHS for SHHS dataset
 
-        self.mrcnn = MRCNN(afr_reduced_cnn_size)  # Use MRCNN_SHHS for SHHS dataset
-
-        # Initialize MultiHeadedAttention and PositionwiseFeedForward with appropriate parameters
         attn = MultiHeadedAttention(h, d_model, afr_reduced_cnn_size)
         ff = PositionwiseFeedForward(d_model, d_ff, dropout)
+        self.tce = TCE(EncoderLayer(d_model, deepcopy(attn), deepcopy(ff), afr_reduced_cnn_size, dropout), N)
 
-        # Use the modified TCE with only one layer as per the diagram
-        self.tce = TCE(d_model, attn, ff, afr_reduced_cnn_size, dropout)
-
-        # Final fully connected layer for classification
         self.fc = nn.Linear(d_model * afr_reduced_cnn_size, num_classes)
 
     def forward(self, x):
-        # Forward through MRCNN to extract features
         x_feat = self.mrcnn(x)
-        # Forward through the single-layer TCE
         encoded_features = self.tce(x_feat)
-        # Reshape and pass through final classification layer
         encoded_features = encoded_features.contiguous().view(encoded_features.shape[0], -1)
         final_output = self.fc(encoded_features)
         return final_output
-    
+
 ######################################################################
 
 class MRCNN_SHHS(nn.Module):
