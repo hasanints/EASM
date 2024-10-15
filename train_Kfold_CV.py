@@ -1,4 +1,3 @@
-
 import argparse
 import collections
 import numpy as np
@@ -10,6 +9,8 @@ import model.model as module_arch
 from parse_config import ConfigParser
 from trainer import Trainer
 from utils.util import *
+from data_loader.data_loaders import data_generator_np
+
 
 import torch
 import torch.nn as nn
