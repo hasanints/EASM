@@ -5,6 +5,7 @@ from utils import inf_loop, MetricTracker
 import torch.nn as nn
 import model.loss as module_loss
 
+selected_d = {"outs": [], "trg": []}
 class Trainer(BaseTrainer):
     """
     Trainer class
