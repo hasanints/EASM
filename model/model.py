@@ -78,15 +78,11 @@ class MRCNN(nn.Module):
         drate = 0.5
         self.GELU = GELU()  # for older versions of PyTorch.  For new versions use nn.GELU() instead.
         self.features1 = nn.Sequential(
-            nn.Conv1d(1, 64, kernel_size=50, stride=6, bias=False, padding=24),
+            nn.Conv1d(1, 128, kernel_size=25, stride=6, bias=False, padding=24),
             nn.BatchNorm1d(64),
             self.GELU,
             nn.MaxPool1d(kernel_size=8, stride=2, padding=4),
             nn.Dropout(drate),
-
-            nn.Conv1d(64, 128, kernel_size=8, stride=1, bias=False, padding=4),
-            nn.BatchNorm1d(128),
-            self.GELU,
 
             nn.Conv1d(128, 128, kernel_size=8, stride=1, bias=False, padding=4),
             nn.BatchNorm1d(128),
@@ -96,17 +92,13 @@ class MRCNN(nn.Module):
         )
 
         self.features2 = nn.Sequential(
-            nn.Conv1d(1, 64, kernel_size=400, stride=50, bias=False, padding=200),
+            nn.Conv1d(1, 128, kernel_size=300, stride=50, bias=False, padding=200),
             nn.BatchNorm1d(64),
             self.GELU,
             nn.MaxPool1d(kernel_size=4, stride=2, padding=2),
             nn.Dropout(drate),
 
             nn.Conv1d(64, 128, kernel_size=7, stride=1, bias=False, padding=3),
-            nn.BatchNorm1d(128),
-            self.GELU,
-
-            nn.Conv1d(128, 128, kernel_size=7, stride=1, bias=False, padding=3),
             nn.BatchNorm1d(128),
             self.GELU,
 
@@ -305,10 +297,10 @@ class AttnSleep(nn.Module):
     def __init__(self):
         super(AttnSleep, self).__init__()
 
-        N = 2  # number of TCE clones
+        N = 1  # number of TCE clones
         d_model = 80  # set to be 100 for SHHS dataset
         d_ff = 120   # dimension of feed forward
-        h = 5  # number of attention heads
+        h = 6  # number of attention heads
         dropout = 0.1
         num_classes = 5
         afr_reduced_cnn_size = 30
