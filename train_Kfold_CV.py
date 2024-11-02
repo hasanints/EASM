@@ -10,7 +10,7 @@ import model.metric as module_metric
 import model.model as module_arch
 from parse_config import ConfigParser
 from trainer import Trainer
-from utils.util import calc_class_weight
+from utils.util import *
 
 # Set random seeds for reproducibility
 SEED = 123
