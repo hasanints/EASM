@@ -76,10 +76,10 @@ class MRCNN(nn.Module):
     def __init__(self, afr_reduced_cnn_size):
         super(MRCNN, self).__init__()
         drate = 0.5
-        self.GELU = GELU()  # for older versions of PyTorch.  For new versions use nn.GELU() instead.
+        self.GELU = GELU()
         self.features1 = nn.Sequential(
-            nn.Conv1d(1, 128, kernel_size=25, stride=6, bias=False, padding=24),
-            nn.BatchNorm1d(64),
+            nn.Conv1d(1, 128, kernel_size=25, stride=6, bias=False, padding=12),
+            nn.BatchNorm1d(128),
             self.GELU,
             nn.MaxPool1d(kernel_size=8, stride=2, padding=4),
             nn.Dropout(drate),
@@ -92,13 +92,13 @@ class MRCNN(nn.Module):
         )
 
         self.features2 = nn.Sequential(
-            nn.Conv1d(1, 128, kernel_size=300, stride=50, bias=False, padding=200),
-            nn.BatchNorm1d(64),
+            nn.Conv1d(1, 128, kernel_size=300, stride=50, bias=False, padding=150),
+            nn.BatchNorm1d(128),
             self.GELU,
             nn.MaxPool1d(kernel_size=4, stride=2, padding=2),
             nn.Dropout(drate),
 
-            nn.Conv1d(64, 128, kernel_size=7, stride=1, bias=False, padding=3),
+            nn.Conv1d(128, 128, kernel_size=7, stride=1, bias=False, padding=3),
             nn.BatchNorm1d(128),
             self.GELU,
 
@@ -108,7 +108,7 @@ class MRCNN(nn.Module):
         self.inplanes = 128
         self.AFR = self._make_layer(SEBasicBlock, afr_reduced_cnn_size, 1)
 
-    def _make_layer(self, block, planes, blocks, stride=1):  # makes residual SE block
+    def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
@@ -120,7 +120,7 @@ class MRCNN(nn.Module):
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample))
         self.inplanes = planes * block.expansion
-        for i in range(1, blocks):
+        for _ in range(1, blocks):
             layers.append(block(self.inplanes, planes))
 
         return nn.Sequential(*layers)
@@ -132,6 +132,7 @@ class MRCNN(nn.Module):
         x_concat = self.dropout(x_concat)
         x_concat = self.AFR(x_concat)
         return x_concat
+
 
 ##########################################################################################
 
