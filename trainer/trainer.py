@@ -6,13 +6,12 @@ import torch.nn as nn
 import model.loss as module_loss
 
 selected_d = {"outs": [], "trg": []}
-
 class Trainer(BaseTrainer):
     """
     Trainer class
     """
     def __init__(self, model, criterion, metric_ftns, optimizer, config, data_loader, fold_id,
-                 valid_data_loader=None, samples_per_cls=None, no_of_classes=5, beta=0.9999, gamma=2.0, lambda_reg=100):
+                 valid_data_loader=None, samples_per_cls=None, no_of_classes=5, beta=0.9999, gamma=2.0):
         super().__init__(model, criterion, metric_ftns, optimizer, config, fold_id)
         self.config = config
         self.data_loader = data_loader
@@ -34,9 +33,15 @@ class Trainer(BaseTrainer):
         self.no_of_classes = no_of_classes
         self.beta = beta
         self.gamma = gamma
-        self.lambda_reg = lambda_reg  # L2 regularization parameter
 
     def _train_epoch(self, epoch, total_epochs):
+        """
+        Training logic for an epoch
+
+        :param epoch: Current training epoch.
+        :param total_epochs: Total number of epochs.
+        :return: A log that contains average loss and metric in this epoch.
+        """
         self.model.train()
         self.train_metrics.reset()
         overall_outs = []
@@ -48,7 +53,7 @@ class Trainer(BaseTrainer):
             self.optimizer.zero_grad()
             output = self.model(data)
 
-            # Apply Class-Balanced Loss with Ridge regularization if specified
+            # Apply Class-Balanced Loss if specified
             if self.config['loss']['type'] == "CB_loss":
                 loss = module_loss.CB_loss(
                     labels=target,
@@ -57,12 +62,10 @@ class Trainer(BaseTrainer):
                     no_of_classes=self.no_of_classes,
                     loss_type="focal",
                     beta=self.beta,
-                    gamma=self.gamma,
-                    model=self.model,
-                    lambda_reg=self.lambda_reg
+                    gamma=self.gamma
                 )
             else:
-                # Use standard criterion
+                # If not using CB_loss, use the standard criterion
                 loss = self.criterion(output, target)
 
             loss.backward()
@@ -104,6 +107,12 @@ class Trainer(BaseTrainer):
         return log, overall_outs, overall_trgs
 
     def _valid_epoch(self, epoch):
+        """
+        Validate after training an epoch
+
+        :param epoch: Current training epoch.
+        :return: A log that contains information about validation
+        """
         self.model.eval()
         self.valid_metrics.reset()
         with torch.no_grad():
@@ -114,7 +123,7 @@ class Trainer(BaseTrainer):
                 data, target = data.to(self.device), target.to(self.device)
                 output = self.model(data)
 
-                # Apply Class-Balanced Loss with Ridge regularization if specified
+                # Apply Class-Balanced Loss if specified
                 if self.config['loss']['type'] == "CB_loss":
                     loss = module_loss.CB_loss(
                         labels=target,
@@ -123,9 +132,7 @@ class Trainer(BaseTrainer):
                         no_of_classes=self.no_of_classes,
                         loss_type="focal",
                         beta=self.beta,
-                        gamma=self.gamma,
-                        model=self.model,
-                        lambda_reg=self.lambda_reg
+                        gamma=self.gamma
                     )
                 else:
                     loss = self.criterion(output, target)
