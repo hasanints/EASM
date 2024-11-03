@@ -3,6 +3,7 @@ import collections
 import numpy as np
 import torch
 import torch.nn as nn
+import wandb
 
 from data_loader.data_loaders import *
 import model.loss as module_loss
@@ -11,6 +12,7 @@ import model.model as module_arch
 from parse_config import ConfigParser
 from trainer import Trainer
 from utils.util import *
+
 
 # Set random seeds for reproducibility
 SEED = 123
@@ -27,6 +29,21 @@ def weights_init_normal(m):
         torch.nn.init.constant_(m.bias.data, 0.0)
 
 def main(config, fold_id):
+
+    # Inisialisasi W&B
+    wandb.init(
+        project="nama_proyek_wandb",  # ganti dengan nama proyek yang diinginkan
+        config=config._config,        # log seluruh konfigurasi
+        name=f"Fold_{fold_id}"        # beri nama run per fold
+    )
+
+    # Log konfigurasi spesifik tambahan
+    wandb.config.update({
+        "batch_size": config["data_loader"]["args"]["batch_size"],
+        "epochs": config["trainer"]["epochs"],
+        "fold_id": fold_id,
+    })
+
     batch_size = config["data_loader"]["args"]["batch_size"]
     logger = config.get_logger('train')
 
@@ -86,6 +103,9 @@ def main(config, fold_id):
 
     # Start training
     trainer.train()
+    
+    # Akhiri logging W&B setelah selesai
+    wandb.finish()
 
 if __name__ == '__main__':
     args = argparse.ArgumentParser(description='PyTorch Training with K-fold Cross-Validation')
