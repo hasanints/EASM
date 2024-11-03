@@ -2,6 +2,7 @@ import torch
 from abc import abstractmethod
 from numpy import inf
 import numpy as np
+import wandb
 
 class BaseTrainer:
     """
@@ -147,6 +148,10 @@ class BaseTrainer:
         filename = str(self.checkpoint_dir / 'checkpoint-epoch{}.pth'.format(epoch))
         torch.save(state, filename)
         self.logger.info("Saving checkpoint: {} ...".format(filename))
+
+        # Log model ke wandb
+        wandb.save(filename)
+
         if save_best:
             best_path = str(self.checkpoint_dir / 'model_best.pth')
             torch.save(state, best_path)
