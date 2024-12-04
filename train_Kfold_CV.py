@@ -30,19 +30,19 @@ def weights_init_normal(m):
 
 def main(config, fold_id):
 
-    # Inisialisasi W&B
-    wandb.init(
-        project="nama_proyek_wandb",  # ganti dengan nama proyek yang diinginkan
-        config=config._config,        # log seluruh konfigurasi
-        name=f"Fold_{fold_id}"        # beri nama run per fold
-    )
+    # # Inisialisasi W&B
+    # wandb.init(
+    #     project="nama_proyek_wandb",  # ganti dengan nama proyek yang diinginkan
+    #     config=config._config,        # log seluruh konfigurasi
+    #     name=f"Fold_{fold_id}"        # beri nama run per fold
+    # )
 
-    # Log konfigurasi spesifik tambahan
-    wandb.config.update({
-        "batch_size": config["data_loader"]["args"]["batch_size"],
-        "epochs": config["trainer"]["epochs"],
-        "fold_id": fold_id,
-    })
+    # # Log konfigurasi spesifik tambahan
+    # wandb.config.update({
+    #     "batch_size": config["data_loader"]["args"]["batch_size"],
+    #     "epochs": config["trainer"]["epochs"],
+    #     "fold_id": fold_id,
+    # })
 
     batch_size = config["data_loader"]["args"]["batch_size"]
     logger = config.get_logger('train')
@@ -52,60 +52,82 @@ def main(config, fold_id):
     model.apply(weights_init_normal)
     logger.info(model)
 
-    # Setup data loaders for current fold
-    data_loader, valid_data_loader, data_count = data_generator_np(folds_data[fold_id][0],
-                                                                   folds_data[fold_id][1], 
-                                                                   batch_size)
+    # # Setup data loaders for current fold
+    # data_loader, valid_data_loader, data_count = data_generator_np(folds_data[fold_id][0],
+    #                                                                folds_data[fold_id][1], 
+    #                                                                batch_size)
 
-    # Calculate class distribution (samples_per_cls) for CB_loss
-    samples_per_cls = data_count
-    no_of_classes = len(samples_per_cls)
-    beta = config['loss']['args'].get('beta', 0.9999)
-    gamma = config['loss']['args'].get('gamma', 2.0)
-    loss_type = config['loss']['args'].get('type', "focal")
+    # # Calculate class distribution (samples_per_cls) for CB_loss
+    # samples_per_cls = data_count
+    # no_of_classes = len(samples_per_cls)
+    # beta = config['loss']['args'].get('beta', 0.9999)
+    # gamma = config['loss']['args'].get('gamma', 2.0)
+    # loss_type = config['loss']['args'].get('type', "focal")
 
-    # Set criterion (CB_loss or standard CrossEntropyLoss)
-    if config['loss']['type'] == 'CB_loss':
-        criterion = lambda output, target: module_loss.CB_loss(
-            labels=target,
-            logits=output,
-            samples_per_cls=samples_per_cls,
-            no_of_classes=no_of_classes,
-            loss_type=loss_type,
-            beta=beta,
-            gamma=gamma
-        )
-    else:
-        criterion = getattr(module_loss, config['loss']['type'])
+    # # Set criterion (CB_loss or standard CrossEntropyLoss)
+    # if config['loss']['type'] == 'CB_loss':
+    #     criterion = lambda output, target: module_loss.CB_loss(
+    #         labels=target,
+    #         logits=output,
+    #         samples_per_cls=samples_per_cls,
+    #         no_of_classes=no_of_classes,
+    #         loss_type=loss_type,
+    #         beta=beta,
+    #         gamma=gamma
+    #     )
+    # else:
+    #     criterion = getattr(module_loss, config['loss']['type'])
 
-    # Get metrics as defined in config
+    # # Get metrics as defined in config
+    # metrics = [getattr(module_metric, met) for met in config['metrics']]
+
+    # # Build optimizer
+    # trainable_params = filter(lambda p: p.requires_grad, model.parameters())
+    # optimizer = config.init_obj('optimizer', torch.optim, trainable_params)
+
+    # # Initialize Trainer with CB_loss parameters
+    # trainer = Trainer(
+    #     model=model,
+    #     criterion=criterion,
+    #     metric_ftns=metrics,
+    #     optimizer=optimizer,
+    #     config=config,
+    #     data_loader=data_loader,
+    #     fold_id=fold_id,
+    #     valid_data_loader=valid_data_loader,
+    #     samples_per_cls=samples_per_cls,
+    #     no_of_classes=no_of_classes,
+    #     beta=beta,
+    #     gamma=gamma
+    # )
+
+    # # Start training
+    # trainer.train()
+
+     # get function handles of loss and metrics
+    criterion = getattr(module_loss, config['loss'])
     metrics = [getattr(module_metric, met) for met in config['metrics']]
 
-    # Build optimizer
+    # build optimizer
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
+
     optimizer = config.init_obj('optimizer', torch.optim, trainable_params)
 
-    # Initialize Trainer with CB_loss parameters
-    trainer = Trainer(
-        model=model,
-        criterion=criterion,
-        metric_ftns=metrics,
-        optimizer=optimizer,
-        config=config,
-        data_loader=data_loader,
-        fold_id=fold_id,
-        valid_data_loader=valid_data_loader,
-        samples_per_cls=samples_per_cls,
-        no_of_classes=no_of_classes,
-        beta=beta,
-        gamma=gamma
-    )
+    data_loader, valid_data_loader, data_count = data_generator_np(folds_data[fold_id][0],
+                                                                   folds_data[fold_id][1], batch_size)
+    weights_for_each_class = calc_class_weight(data_count)
 
-    # Start training
+    trainer = Trainer(model, criterion, metrics, optimizer,
+                      config=config,
+                      data_loader=data_loader,
+                      fold_id=fold_id,
+                      valid_data_loader=valid_data_loader,
+                      class_weights=weights_for_each_class)
+
     trainer.train()
     
     # Akhiri logging W&B setelah selesai
-    wandb.finish()
+    # wandb.finish()
 
 if __name__ == '__main__':
     args = argparse.ArgumentParser(description='PyTorch Training with K-fold Cross-Validation')
