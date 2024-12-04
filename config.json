@@ -1,5 +1,5 @@
 {
-    "name": "sleep_edf20_exp2",
+    "name": "sleep_edf20_MRCNN_exp1",
     "n_gpu": 4,
 
     "arch": {
@@ -22,15 +22,14 @@
         }
     },
     "loss": {
-        "type": "CB_loss",
+        "type": "weighted_CrossEntropyLoss",
         "args": {
             "beta": 0.9999,
             "gamma": 2.0
         }
     },
     "metrics": [
-        "accuracy",
-        "f1"
+        "accuracy"
     ],
     "trainer": {
         "epochs": 100,

@@ -67,7 +67,7 @@ class Trainer(BaseTrainer):
                 )
             else:
                 # If not using CB_loss, use the standard criterion
-                loss = self.criterion(output, target)
+                loss = self.criterion(output, target, self.class_weights, self.device)
 
             loss.backward()
             self.optimizer.step()
@@ -138,7 +138,7 @@ class Trainer(BaseTrainer):
                         gamma=self.gamma
                     )
                 else:
-                    loss = self.criterion(output, target)
+                    loss = self.criterion(output, target, self.class_weights, self.device)
 
                 self.valid_metrics.update('loss', loss.item())
                 for met in self.metric_ftns:
