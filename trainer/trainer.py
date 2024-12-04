@@ -54,20 +54,21 @@ class Trainer(BaseTrainer):
             self.optimizer.zero_grad()
             output = self.model(data)
 
-            # Apply Class-Balanced Loss if specified
-            if self.config['loss']['type'] == "CB_loss":
-                loss = module_loss.CB_loss(
-                    labels=target,
-                    logits=output,
-                    samples_per_cls=self.samples_per_cls,
-                    no_of_classes=self.no_of_classes,
-                    loss_type="focal",
-                    beta=self.beta,
-                    gamma=self.gamma
-                )
-            else:
-                # If not using CB_loss, use the standard criterion
-                loss = self.criterion(output, target, self.class_weights, self.device)
+            # # Apply Class-Balanced Loss if specified
+            # if self.config['loss']['type'] == "CB_loss":
+            #     loss = module_loss.CB_loss(
+            #         labels=target,
+            #         logits=output,
+            #         samples_per_cls=self.samples_per_cls,
+            #         no_of_classes=self.no_of_classes,
+            #         loss_type="focal",
+            #         beta=self.beta,
+            #         gamma=self.gamma
+            #     )
+            # else:
+            #     # If not using CB_loss, use the standard criterion
+            #     loss = self.criterion(output, target, self.class_weights, self.device)
+            loss = self.criterion(output, target, self.class_weights, self.device)
 
             loss.backward()
             self.optimizer.step()
@@ -126,19 +127,20 @@ class Trainer(BaseTrainer):
                 data, target = data.to(self.device), target.to(self.device)
                 output = self.model(data)
 
-                # Apply Class-Balanced Loss if specified
-                if self.config['loss']['type'] == "CB_loss":
-                    loss = module_loss.CB_loss(
-                        labels=target,
-                        logits=output,
-                        samples_per_cls=self.samples_per_cls,
-                        no_of_classes=self.no_of_classes,
-                        loss_type="focal",
-                        beta=self.beta,
-                        gamma=self.gamma
-                    )
-                else:
-                    loss = self.criterion(output, target, self.class_weights, self.device)
+                # # Apply Class-Balanced Loss if specified
+                # if self.config['loss']['type'] == "CB_loss":
+                #     loss = module_loss.CB_loss(
+                #         labels=target,
+                #         logits=output,
+                #         samples_per_cls=self.samples_per_cls,
+                #         no_of_classes=self.no_of_classes,
+                #         loss_type="focal",
+                #         beta=self.beta,
+                #         gamma=self.gamma
+                #     )
+                # else:
+                #     loss = self.criterion(output, target, self.class_weights, self.device)
+                loss = self.criterion(output, target, self.class_weights, self.device)
 
                 self.valid_metrics.update('loss', loss.item())
                 for met in self.metric_ftns:
