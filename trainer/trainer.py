@@ -28,12 +28,16 @@ class Trainer(BaseTrainer):
 
         self.fold_id = fold_id
         self.selected = 0
+        self.class_weights = class_weights
 
-        # Parameters for Class-Balanced Loss
-        self.samples_per_cls = samples_per_cls
-        self.no_of_classes = no_of_classes
-        self.beta = beta
-        self.gamma = gamma
+        # self.fold_id = fold_id
+        # self.selected = 0
+
+        # # Parameters for Class-Balanced Loss
+        # self.samples_per_cls = samples_per_cls
+        # self.no_of_classes = no_of_classes
+        # self.beta = beta
+        # self.gamma = gamma
 
     def _train_epoch(self, epoch, total_epochs):
         """
