@@ -78,7 +78,7 @@ class MRCNN(nn.Module):
         drate = 0.5
         self.GELU = GELU()  # for older versions of PyTorch.  For new versions use nn.GELU() instead.
         self.features1 = nn.Sequential(
-            nn.Conv1d(1, 128, kernel_size=25, stride=6, bias=False, padding=24),
+            nn.Conv1d(1, 128, kernel_size=25, stride=6, bias=False, padding=12),
             nn.BatchNorm1d(128),
             self.GELU,
             nn.MaxPool1d(kernel_size=8, stride=2, padding=4),
@@ -96,10 +96,10 @@ class MRCNN(nn.Module):
         )
 
         self.features2 = nn.Sequential(
-            nn.Conv1d(1, 128, kernel_size=300, stride=50, bias=False, padding=200),
+            nn.Conv1d(1, 128, kernel_size=300, stride=50, bias=False, padding=150),
             nn.BatchNorm1d(128),
             self.GELU,
-            nn.MaxPool1d(kernel_size=8, stride=2, padding=2),
+            nn.MaxPool1d(kernel_size=8, stride=2, padding=4),
             nn.Dropout(drate),
 
             nn.Conv1d(128, 128, kernel_size=7, stride=1, bias=False, padding=3),

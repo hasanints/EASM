@@ -21,15 +21,10 @@
             "amsgrad": true
         }
     },
-    "loss": {
-        "type": "weighted_CrossEntropyLoss",
-        "args": {
-            "beta": 0.9999,
-            "gamma": 2.0
-        }
-    },
+    "loss": "weighted_CrossEntropyLoss",
     "metrics": [
-        "accuracy"
+        "accuracy",
+        "f1"
     ],
     "trainer": {
         "epochs": 100,

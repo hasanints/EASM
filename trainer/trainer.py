@@ -3,8 +3,6 @@ import torch
 from base import BaseTrainer
 from utils import inf_loop, MetricTracker
 import torch.nn as nn
-import model.loss as module_loss
-import wandb
 
 selected_d = {"outs": [], "trg": []}
 class Trainer(BaseTrainer):
@@ -12,7 +10,7 @@ class Trainer(BaseTrainer):
     Trainer class
     """
     def __init__(self, model, criterion, metric_ftns, optimizer, config, data_loader, fold_id,
-                 valid_data_loader=None, samples_per_cls=None, no_of_classes=5, beta=0.9999, gamma=2.0):
+                 valid_data_loader=None, class_weights=None):
         super().__init__(model, criterion, metric_ftns, optimizer, config, fold_id)
         self.config = config
         self.data_loader = data_loader
@@ -21,7 +19,7 @@ class Trainer(BaseTrainer):
         self.valid_data_loader = valid_data_loader
         self.do_validation = self.valid_data_loader is not None
         self.lr_scheduler = optimizer
-        self.log_step = int(data_loader.batch_size) * 1  # adjust log step if more logs are needed
+        self.log_step = int(data_loader.batch_size) * 1  # reduce this if you want more logs
 
         self.train_metrics = MetricTracker('loss', *[m.__name__ for m in self.metric_ftns])
         self.valid_metrics = MetricTracker('loss', *[m.__name__ for m in self.metric_ftns])
@@ -30,58 +28,32 @@ class Trainer(BaseTrainer):
         self.selected = 0
         self.class_weights = class_weights
 
-        # self.fold_id = fold_id
-        # self.selected = 0
-
-        # # Parameters for Class-Balanced Loss
-        # self.samples_per_cls = samples_per_cls
-        # self.no_of_classes = no_of_classes
-        # self.beta = beta
-        # self.gamma = gamma
-
     def _train_epoch(self, epoch, total_epochs):
         """
         Training logic for an epoch
 
-        :param epoch: Current training epoch.
-        :param total_epochs: Total number of epochs.
+        :param epoch: Integer, current training epoch.
+               total_epochs: Integer, the total number of epoch
         :return: A log that contains average loss and metric in this epoch.
         """
         self.model.train()
         self.train_metrics.reset()
         overall_outs = []
         overall_trgs = []
-
         for batch_idx, (data, target) in enumerate(self.data_loader):
             data, target = data.to(self.device), target.to(self.device)
 
             self.optimizer.zero_grad()
             output = self.model(data)
 
-            # # Apply Class-Balanced Loss if specified
-            # if self.config['loss']['type'] == "CB_loss":
-            #     loss = module_loss.CB_loss(
-            #         labels=target,
-            #         logits=output,
-            #         samples_per_cls=self.samples_per_cls,
-            #         no_of_classes=self.no_of_classes,
-            #         loss_type="focal",
-            #         beta=self.beta,
-            #         gamma=self.gamma
-            #     )
-            # else:
-            #     # If not using CB_loss, use the standard criterion
-            #     loss = self.criterion(output, target, self.class_weights, self.device)
             loss = self.criterion(output, target, self.class_weights, self.device)
 
             loss.backward()
             self.optimizer.step()
 
-            # Update metrics
             self.train_metrics.update('loss', loss.item())
             for met in self.metric_ftns:
                 self.train_metrics.update(met.__name__, met(output, target))
-            wandb.log({"train_loss": loss.item()})
 
             if batch_idx % self.log_step == 0:
                 self.logger.debug('Train Epoch: {} {} Loss: {:.6f} '.format(
@@ -92,9 +64,7 @@ class Trainer(BaseTrainer):
 
             if batch_idx == self.len_epoch:
                 break
-
         log = self.train_metrics.result()
-        wandb.log(log)
 
         if self.do_validation:
             val_log, outs, trgs = self._valid_epoch(epoch)
@@ -107,7 +77,7 @@ class Trainer(BaseTrainer):
                 overall_outs.extend(selected_d["outs"])
                 overall_trgs.extend(selected_d["trg"])
 
-            # Reduce learning rate after epoch 10
+            # THIS part is to reduce the learning rate after 10 epochs to 1e-4
             if epoch == 10:
                 for g in self.lr_scheduler.param_groups:
                     g['lr'] = 0.0001
@@ -118,7 +88,7 @@ class Trainer(BaseTrainer):
         """
         Validate after training an epoch
 
-        :param epoch: Current training epoch.
+        :param epoch: Integer, current training epoch.
         :return: A log that contains information about validation
         """
         self.model.eval()
@@ -126,35 +96,20 @@ class Trainer(BaseTrainer):
         with torch.no_grad():
             outs = np.array([])
             trgs = np.array([])
-
             for batch_idx, (data, target) in enumerate(self.valid_data_loader):
                 data, target = data.to(self.device), target.to(self.device)
                 output = self.model(data)
-
-                # # Apply Class-Balanced Loss if specified
-                # if self.config['loss']['type'] == "CB_loss":
-                #     loss = module_loss.CB_loss(
-                #         labels=target,
-                #         logits=output,
-                #         samples_per_cls=self.samples_per_cls,
-                #         no_of_classes=self.no_of_classes,
-                #         loss_type="focal",
-                #         beta=self.beta,
-                #         gamma=self.gamma
-                #     )
-                # else:
-                #     loss = self.criterion(output, target, self.class_weights, self.device)
                 loss = self.criterion(output, target, self.class_weights, self.device)
 
                 self.valid_metrics.update('loss', loss.item())
                 for met in self.metric_ftns:
-                    metric_value = met(output, target)
-                    self.valid_metrics.update(met.__name__, metric_value)
-                    wandb.log({f"val_{met.__name__}": metric_value})
+                    self.valid_metrics.update(met.__name__, met(output, target))
 
                 preds_ = output.data.max(1, keepdim=True)[1].cpu()
-                outs = np.append(outs, preds_.numpy())
+
+                outs = np.append(outs, preds_.cpu().numpy())
                 trgs = np.append(trgs, target.data.cpu().numpy())
+
 
         return self.valid_metrics.result(), outs, trgs
 
