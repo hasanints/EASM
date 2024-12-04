@@ -88,10 +88,6 @@ class MRCNN(nn.Module):
             nn.BatchNorm1d(128),
             self.GELU,
 
-            nn.Conv1d(128, 128, kernel_size=8, stride=1, bias=False, padding=4),
-            nn.BatchNorm1d(128),
-            self.GELU,
-
             nn.MaxPool1d(kernel_size=4, stride=4, padding=2)
         )
 
@@ -101,10 +97,6 @@ class MRCNN(nn.Module):
             self.GELU,
             nn.MaxPool1d(kernel_size=8, stride=2, padding=4),
             nn.Dropout(drate),
-
-            nn.Conv1d(128, 128, kernel_size=7, stride=1, bias=False, padding=3),
-            nn.BatchNorm1d(128),
-            self.GELU,
 
             nn.Conv1d(128, 128, kernel_size=7, stride=1, bias=False, padding=3),
             nn.BatchNorm1d(128),

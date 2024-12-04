@@ -1,5 +1,5 @@
 {
-    "name": "sleep_edf20_MRCNN_exp1",
+    "name": "sleep_edf20_MRCNN2_exp1",
     "n_gpu": 4,
 
     "arch": {
